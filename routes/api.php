@@ -12,7 +12,11 @@ use App\Http\Controllers\VacationNewController;
 Route::get('users-with-vacations', [UserController::class, 'getUsersWithVacations']);
 Route::post('/register', [UserController::class, 'register']);
 Route::post('login', [UserController::class, 'login']);
+Route::put('users/{id}', [UserController::class, 'update']);
+Route::put('users/{id}/update-vacation', [UserController::class, 'updateVacation']);
 Route::delete('users/{id}', [UserController::class, 'destroy']);
+
+
 
 
 // Vacation

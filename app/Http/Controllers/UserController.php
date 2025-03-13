@@ -90,6 +90,71 @@ public function getUsersWithVacations()
         return response()->json(['message' => 'Invalid credentials'], 401);
     }
 
+        public function update(Request $request, $id)
+    {
+       $user = User::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+        'country' => 'nullable|string|max:255',
+        'entryDate' => 'nullable|date',
+        'exitDate' => 'nullable|date',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+       $user->update([
+        'name' => $request->name,
+        'email' => $request->email,
+        'country' => $request->country,
+        'entryDate' => $request->entryDate,
+        'exitDate' => $request->exitDate,
+    ]);
+
+    return response()->json([
+        'message' => 'User updated successfully',
+        'user' => $user,
+    ]);
+}
+
+public function updateVacation(Request $request, $id)
+{
+    $user = User::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'country' => 'nullable|string|max:255',
+        'entryDate' => 'nullable|date',
+        'exitDate' => 'nullable|date',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    $user->vacations()->update([
+        'place_name' => $request->country,
+        'start_date' => $request->entryDate,
+        'end_date' => $request->exitDate,
+    ]);
+
+    return response()->json([
+        'message' => 'Vacation data updated successfully',
+        'user' => $user->load('vacations'),
+    ]);
+}
+
+
         public function destroy($id){
         $user = User::find($id);
 
@@ -99,4 +164,7 @@ public function getUsersWithVacations()
         $user->delete();
         return response()->json(['messege' => 'User deleted successfully']);
         }
+
+
 }
+
