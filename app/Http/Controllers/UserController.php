@@ -42,6 +42,52 @@ class UserController extends Controller
       ], 201);
   }
 
+public function store(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'country' => 'nullable|string|max:255',
+        'entryDate' => 'nullable|date',
+        'exitDate' => 'nullable|date',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    try {
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => '',
+        ]);
+
+        if (!$user) {
+            return response()->json(['error' => 'Failed to create user'], 500);
+        }
+
+
+        if ($request->country || $request->entryDate || $request->exitDate) {
+            $vacation = $user->vacations()->create([
+                'place_name' => $request->country,
+                'start_date' => $request->entryDate,
+                'end_date' => $request->exitDate,
+            ]);
+
+            if (!$vacation) {
+                return response()->json(['error' => 'Failed to create vacation data'], 500);
+            }
+        }
+
+        return response()->json(['message' => 'User created successfully', 'user' => $user->load('vacations')], 201);
+    } catch (\Exception $e) {
+        \Log::error('User creation failed: ' . $e->getMessage());
+        return response()->json(['error' => 'Server error', 'message' => $e->getMessage()], 500);
+    }
+}
+
 public function getUsersWithVacations()
 {
     $users = User::with('vacations')

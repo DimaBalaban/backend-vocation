@@ -15,6 +15,7 @@ Route::post('login', [UserController::class, 'login']);
 Route::put('users/{id}', [UserController::class, 'update']);
 Route::put('users/{id}/update-vacation', [UserController::class, 'updateVacation']);
 Route::delete('users/{id}', [UserController::class, 'destroy']);
+Route::post('users', [UserController::class, 'store']);
 
 
 
