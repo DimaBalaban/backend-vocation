@@ -108,7 +108,6 @@ public function getUsersWithVacations()
                         'exitDate' => $user->vacations->first()->end_date ?? 'No exit date',
                     ];
                 });
-
     return response()->json($users);
 }
 

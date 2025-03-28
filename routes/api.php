@@ -23,7 +23,7 @@ Route::post('users', [UserController::class, 'store']);
 // Vacation
 
 Route::post('vacation_new', [VacationNewController::class, 'store']);
-
+Route::get('vacations', [VacationNewController::class, 'getVacations']);
 
 // likes
 
