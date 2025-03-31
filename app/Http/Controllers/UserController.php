@@ -88,26 +88,32 @@ public function store(Request $request)
     }
 }
 
-public function getUsersWithVacations()
+public function getUsersWithVacations(Request $request)
 {
+    $search = $request->query('search');
+
     $users = User::with('vacations')
-                ->get()
-                ->filter(function($user) {
-                    return $user->vacations->isNotEmpty() &&
-                           $user->vacations->first()->place_name &&
-                           $user->vacations->first()->start_date &&
-                           $user->vacations->first()->end_date;
-                })
-                ->map(function($user) {
-                 return [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'country' => $user->vacations->first()->place_name ?? 'No country',
-                        'entryDate' => $user->vacations->first()->start_date ?? 'No entry date',
-                        'exitDate' => $user->vacations->first()->end_date ?? 'No exit date',
-                    ];
-                });
+        ->when($search, function ($query, $search) {
+            return $query->where('name', 'LIKE', "%{$search}%");
+        })
+        ->get()
+        ->filter(function ($user) {
+            return $user->vacations->isNotEmpty() &&
+                   $user->vacations->first()->place_name &&
+                   $user->vacations->first()->start_date &&
+                   $user->vacations->first()->end_date;
+        })
+        ->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'country' => $user->vacations->first()->place_name ?? 'No country',
+                'entryDate' => $user->vacations->first()->start_date ?? 'No entry date',
+                'exitDate' => $user->vacations->first()->end_date ?? 'No exit date',
+            ];
+        });
+
     return response()->json($users);
 }
 
@@ -209,7 +215,6 @@ public function updateVacation(Request $request, $id)
         $user->delete();
         return response()->json(['messege' => 'User deleted successfully']);
         }
-
 
 }
 
