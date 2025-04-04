@@ -94,7 +94,13 @@ public function getUsersWithVacations(Request $request)
 
     $users = User::with('vacations')
         ->when($search, function ($query, $search) {
-            return $query->where('name', 'LIKE', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhereHas('vacations', function ($q2) use ($search) {
+                      $q2->where('start_date', 'LIKE', "%{$search}%")
+                         ->orWhere('end_date', 'LIKE', "%{$search}%");
+                  });
+            });
         })
         ->get()
         ->filter(function ($user) {
