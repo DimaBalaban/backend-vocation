@@ -5,8 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VacationLikeController;
 use App\Http\Controllers\VacationNewController;
-
-
+use App\Http\Controllers\AIChatbotController;
 
 // Users
 Route::get('users-with-vacations', [UserController::class, 'getUsersWithVacations']);
@@ -17,18 +16,18 @@ Route::put('users/{id}/update-vacation', [UserController::class, 'updateVacation
 Route::delete('users/{id}', [UserController::class, 'destroy']);
 Route::post('users', [UserController::class, 'store']);
 
-
-
-
 // Vacation
-
 Route::post('vacation_new', [VacationNewController::class, 'store']);
 Route::get('vacations', [VacationNewController::class, 'getVacations']);
 
 // likes
-
 Route::get('vacations_like/{vacationId}', [VacationLikeController::class, 'getLikesForVacation']);
 Route::post('vacations_like', [VacationLikeController::class, 'store']);
+
+// AI Chatbot
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('chat/request', [AIChatbotController::class, 'handleRequest']);
+});
 
 
 

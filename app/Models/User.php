@@ -39,13 +39,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(VacationNew::class, 'user_id');
     }
-
-    public function getRole()
-    {
-        return $this->role;
-    }
-
-
 }
 
 
