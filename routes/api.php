@@ -25,9 +25,10 @@ Route::get('vacations_like/{vacationId}', [VacationLikeController::class, 'getLi
 Route::post('vacations_like', [VacationLikeController::class, 'store']);
 
 // AI Chatbot
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('chat/request', [AIChatbotController::class, 'handleRequest']);
-});
+Route::post('/weather', [AIChatbotController::class, 'getWeather']);
+Route::post('/hotels', [AIChatbotController::class, 'getHotels']);
+Route::post('/attractions', [AIChatbotController::class, 'getAttractions']);
+
 
 
 

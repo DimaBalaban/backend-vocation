@@ -17,7 +17,7 @@ class VacationLike extends Model
 
     public function vacation()
     {
-        return $this->belongsTo(Vacation::class);
+        return $this->belongsTo(VacationNew::class);
     }
 
 
