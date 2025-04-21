@@ -25,9 +25,11 @@ Route::get('vacations_like/{vacationId}', [VacationLikeController::class, 'getLi
 Route::post('vacations_like', [VacationLikeController::class, 'store']);
 
 // AI Chatbot
-Route::post('/weather', [AIChatbotController::class, 'getWeather']);
-Route::post('/hotels', [AIChatbotController::class, 'getHotels']);
-Route::post('/attractions', [AIChatbotController::class, 'getAttractions']);
+Route::post('weather', [AIChatbotController::class, 'getWeather']);
+Route::post('hotels', [AIChatbotController::class, 'getHotels']);
+Route::post('attractions', [AIChatbotController::class, 'getAttractions']);
+Route::post('chat', [AIChatbotController::class, 'chat']);
+Route::post('/chat/request', [AIChatbotController::class, 'chat']);
 
 
 

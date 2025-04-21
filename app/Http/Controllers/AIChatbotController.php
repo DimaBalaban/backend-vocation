@@ -8,85 +8,115 @@ use Illuminate\Support\Facades\Log;
 
 class AIChatbotController extends Controller
 {
-    public function getWeather(Request $request)
-    {
-        try {
-            $country = $request->input('country');
-            $month = $request->input('month');
-            
-            if (!$country || !$month) {
-                return response()->json(['error' => 'Country and month are required'], 400);
-            }
+    private $openRouterApiKey;
 
-            // Простой ответ без внешних API
-            return response()->json([
-                'message' => "В {$country} в месяце {$month} обычно хорошая погода для путешествий. Рекомендуем взять с собой легкую одежду и зонт на случай дождя.",
-                'source' => "https://www.google.com/search?q=погода+в+{$country}+в+{$month}"
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('Weather API Error: ' . $e->getMessage());
-            return response()->json(['error' => 'Internal server error'], 500);
+    public function __construct()
+    {
+        $this->openRouterApiKey = env('OPENROUTER_API_KEY');
+
+        if (empty($this->openRouterApiKey)) {
+            Log::error('OpenRouter API key is not set in .env file');
         }
     }
-    
-    public function getHotels(Request $request)
+
+    public function chat(Request $request)
     {
         try {
-            $country = $request->input('country');
-            $city = $request->input('city');
-            
-            if (!$country || !$city) {
-                return response()->json(['error' => 'Country and city are required'], 400);
+            $message = $request->input('message');
+
+            if (empty($message)) {
+                Log::warning('Empty message in request.');
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Message is required'
+                ], 400);
             }
 
-            // Простой ответ с информацией о поиске отелей
-            return response()->json([
-                'message' => "Для поиска отелей в {$city}, {$country} посетите Booking.com",
-                'search_url' => "https://www.booking.com/searchresults.html?ss={$city},{$country}"
+            Log::info('User message received', [
+                'user_message' => $message
             ]);
-            
+
+            $aiResponse = $this->getAIResponse($message);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $aiResponse
+            ]);
         } catch (\Exception $e) {
-            Log::error('Hotels API Error: ' . $e->getMessage());
-            return response()->json(['error' => 'Internal server error'], 500);
+            Log::error('Error in chat()', [
+                'exception_message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while processing your request.'
+            ], 500);
         }
     }
-    
-    public function getAttractions(Request $request)
+
+    private function getAIResponse(string $message): string
     {
+        if (empty($this->openRouterApiKey)) {
+            Log::error('API key is empty, check .env');
+            return 'Error: API key is not set.';
+        }
+
         try {
-            $country = $request->input('country');
-            
-            if (!$country) {
-                return response()->json(['error' => 'Country is required'], 400);
+            $payload = [
+                'model' => 'deepseek/deepseek-chat-v3-0324:free',
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are a vacation assistant. Reply clearly and briefly.'
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $message
+                    ],
+                ],
+                'temperature' => 0.7
+            ];
+
+            Log::debug('Sending request to OpenRouter', [
+                'payload' => $payload
+            ]);
+
+            $response = Http::withOptions([
+                'verify' => 'C:\cacert\cacert.pem'
+            ])
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->openRouterApiKey,
+                    'HTTP-Referer' => 'http://localhost',
+                    'Content-Type' => 'application/json'
+                ])
+                ->timeout(30)
+                ->post('https://openrouter.ai/api/v1/chat/completions', $payload);
+
+            Log::debug('Response from OpenRouter', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            if (!$response->successful()) {
+                return 'AI error: status ' . $response->status() . ' ' . $response->body();
             }
 
-            // Простой ответ без внешних API
-            return response()->json([
-                'message' => "В {$country} есть множество интересных достопримечательностей. Рекомендуем посетить основные туристические места и музеи.",
-                'source' => "https://en.wikipedia.org/wiki/Tourism_in_" . str_replace(' ', '_', ucwords($country))
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('Attractions API Error: ' . $e->getMessage());
-            return response()->json(['error' => 'Internal server error'], 500);
-        }
-    }
-    
-    private function getCountryCapital($country)
-    {
-        try {
-            $url = "https://restcountries.com/v3.1/name/{$country}";
-            $response = Http::get($url);
             $data = $response->json();
-            
-            if ($data && isset($data[0]['capital'][0])) {
-                return $data[0]['capital'][0];
+
+            if (!isset($data['choices'][0]['message']['content'])) {
+                Log::warning('Unexpected OpenRouter response structure', [
+                    'response' => $data
+                ]);
+                return 'Sorry, could not retrieve a valid response from the AI.';
             }
+
+            return $data['choices'][0]['message']['content'];
         } catch (\Exception $e) {
-            Log::error('Country Capital API Error: ' . $e->getMessage());
+            Log::error('Error in getAIResponse()', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 'An error occurred while communicating with the AI.';
         }
-        
-        return null;
     }
 }
